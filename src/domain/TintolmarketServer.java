@@ -11,28 +11,41 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.FileInputStream;
 
+import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
-import Entities.AuthenticationValidator;
 import catalogs.MessageCatalog;
 import catalogs.SellsCatalog;
 import catalogs.UserCatalog;
 import catalogs.WineCatalog;
+import entities.AuthenticationValidator;
+import entities.FileEncryptor;
 
 public class TintolmarketServer {
 
@@ -47,7 +60,7 @@ public class TintolmarketServer {
 	public static WineCatalog wineCatalog;
 	private static MessageCatalog messageCatalog;
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InvalidKeySpecException {
 
 		System.out.println("servidor: main");
 
@@ -67,6 +80,20 @@ public class TintolmarketServer {
 		if (args.length == 4) {
 			port = Integer.parseInt(args[0]);
 		}
+		
+	    try {
+	        // Cifrar
+	    	FileEncryptor.encryptUsers(USERSCATFILE, "./src/encrypted.txt", passwordCifra);
+	        System.out.println("Ficheiro cifrado com sucesso.");
+
+	        // Decifrar (dps colocar no sitio onde e suposto)
+	        UserCatalog.decryptUsers("./src/encrypted.txt", "./src/decrypted.txt", passwordCifra);
+	        System.out.println("Ficheiro decifrado com sucesso.");
+	        
+	    } catch (Exception ex) {
+	        System.out.println("Ocorreu um erro: " + ex.getMessage());
+	        ex.printStackTrace();
+	    }
 
 		System.setProperty("javax.net.ssl.keyStore", "src//keys//" + serverKeystore);
 		System.setProperty("javax.net.ssl.keyStorePassword", passwordServerKeystore);

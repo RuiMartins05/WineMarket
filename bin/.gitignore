@@ -1,2 +1,5 @@
 /domain/
-/Entities/
+/entities/
+/catalogs/
+/encrypted.txt
+/decrypted.txt
