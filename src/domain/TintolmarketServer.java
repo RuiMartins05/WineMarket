@@ -102,36 +102,44 @@ public class TintolmarketServer {
 		File fSell = new File(SELLSCATFILE);
 		File fMsg = new File(MSGCATFILE);
 		File fWallet = new File(WALLETFILE);
-		
+
 		try {
-		    boolean allFilesValid = true;
-		    
-		    if (!integrityChecker.beforeVsNowIntegrity(fWine)) {
-		        allFilesValid = false;
-		        System.out.println("O ficheiro " + fWine.getName() + " esta corrompido.");
-		    }
-		    
-		    if (!integrityChecker.beforeVsNowIntegrity(fSell)) {
-		        allFilesValid = false;
-		        System.out.println("O ficheiro " + fSell.getName() + " esta corrompido.");
-		    }
-		    
-		    if (!integrityChecker.beforeVsNowIntegrity(fMsg)) {
-		        allFilesValid = false;
-		        System.out.println("O ficheiro " + fMsg.getName() + " esta corrompido.");
-		    }
-		    
-		    if (!integrityChecker.beforeVsNowIntegrity(fWallet)) {
-		        allFilesValid = false;
-		        System.out.println("O ficheiro " + fWallet.getName() + " esta corrompido.");
-		    }
-		    
-		    if (allFilesValid) {
-		        System.out.println("Os ficheiros estao integros.");
-		    }
+
+			if(!integrityChecker.isPreviousHmacNull(fWine,fSell,fMsg,fWallet)) {	
+
+				boolean allFilesValid = true;
+
+				if (!integrityChecker.beforeVsNowIntegrity(fWine)) {
+					allFilesValid = false;
+					System.out.println("O ficheiro " + fWine.getName() + " esta corrompido.");
+				}
+
+				if (!integrityChecker.beforeVsNowIntegrity(fSell)) {
+					allFilesValid = false;
+					System.out.println("O ficheiro " + fSell.getName() + " esta corrompido.");
+				}
+
+				if (!integrityChecker.beforeVsNowIntegrity(fMsg)) {
+					allFilesValid = false;
+					System.out.println("O ficheiro " + fMsg.getName() + " esta corrompido.");
+				}
+
+				if (!integrityChecker.beforeVsNowIntegrity(fWallet)) {
+					allFilesValid = false;
+					System.out.println("O ficheiro " + fWallet.getName() + " esta corrompido.");
+				}
+
+				if (allFilesValid) {
+					System.out.println("Os ficheiros estao integros.");
+				}
+
+			}
+
+			System.out.println("Os ficheiros estao integros.");
+
 		} catch (Exception e) {
-		    System.out.println("Algum ficheiro podera estar corrompido.");
-		    e.printStackTrace();
+			System.out.println("Algum ficheiro podera estar corrompido.");
+			e.printStackTrace();
 		}
 
 		System.setProperty("javax.net.ssl.keyStore", "src//keys//" + serverKeyAlias);
@@ -167,15 +175,15 @@ public class TintolmarketServer {
 		initializeWineCatalog();
 		initializeMessagesStore();
 
-//		blockchain.initializeBlockChain();
+		//		blockchain.initializeBlockChain();
 		// aqui nao basta apenas isto. tem de ser criado o metodo que carrega a
 		// blockchain para a memoria
 		// este metodo so pode ficar aqui se nao existir blockchain ainda
-//		try {
-//			blockchain.createBlock(null);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		//		try {
+		//			blockchain.createBlock(null);
+		//		} catch (IOException e) {
+		//			e.printStackTrace();
+		//		}
 	}
 
 	private synchronized void initializeMessagesStore() {

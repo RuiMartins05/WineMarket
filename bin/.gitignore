@@ -12,3 +12,6 @@
 /userWallet.txt
 /wineCatalog.txt
 /userCatalog.txt
+/hmac/
+/previousHmacs.txt
+/a.txt
