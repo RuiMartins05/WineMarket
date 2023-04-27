@@ -52,4 +52,8 @@ public class MessageCatalog {
 		messageCatalog.remove(index);
 	}
 
+	public ArrayList<Mensagem> getAllMessages() {
+		return this.messageCatalog;
+	}
+
 }

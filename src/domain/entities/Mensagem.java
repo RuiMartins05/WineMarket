@@ -1,12 +1,18 @@
 package domain.entities;
 
-public class Mensagem {
+import java.io.Serializable;
 
+public class Mensagem implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String sender;
 	private String recipient;
-	private String message;
+	private byte[] message;
 
-	public Mensagem(String sender, String recipient, String message) {
+	public Mensagem(String sender, String recipient, byte[] message) {
 		this.sender = sender;
 		this.recipient = recipient;
 		this.message = message;
@@ -20,7 +26,7 @@ public class Mensagem {
 		return recipient;
 	}
 
-	public String getMessage() {
+	public byte[] getMessage() {
 		return message;
 	}
 

@@ -19,6 +19,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -164,11 +165,11 @@ public class Tintolmarket {
 
 						userAction = userActionSplited[0] + " " + userActionSplited[1];
 						outStream.writeObject(userAction);
-						outStream.writeObject(Base64.getEncoder().encodeToString(encryptedData));
+						outStream.writeObject(encryptedData);
 					} else {
-
 						outStream.writeObject(userAction);
 					}
+					
 					if (userActionSplited[0].equals("add") || userActionSplited[0].equals("a")) {
 						SendImagesHandler sendImgHandler = new SendImagesHandler(outStream, "./src/imgClient/");
 						try {
@@ -198,32 +199,30 @@ public class Tintolmarket {
 						}
 					}
 
-					String result = (String) inStream.readObject();
-					
-					System.out.println("RESULT " + result);
+					String result = null;
 					if (userActionSplited[0].equals("read") || userActionSplited[0].equals("r")) {
 						
-						Scanner sc = new Scanner(result);
+						ArrayList<Mensagem> resultMensagens = (ArrayList<Mensagem>) inStream.readObject();
+	
 						
 						Cipher cipher = Cipher.getInstance("RSA");
 						cipher.init(Cipher.DECRYPT_MODE, clientAuth.getPrivateKey());
 						StringBuilder sb = new StringBuilder();
 						sb.append("Mensagens recebidas: \n");
 						
-						while(sc.hasNextLine()) {
-							String currentLine = sc.nextLine();
-							String[] currentLineSplitted = currentLine.split(":");
-							System.out.println("CURRENT LINE " + currentLine);
-							String msgEncrypted = currentLineSplitted[1];
+						for (Mensagem m: resultMensagens) {
+							byte[] msgEncrypted = m.getMessage();
 							String msgDecrypted = decryptMessage(msgEncrypted, cipher);
-							sb.append(" Remetente: " + currentLineSplitted[0] + ";\n Mensagem: " + msgDecrypted + " \n\n");
+							sb.append(" Remetente: " + m.getSender() + ";\n Mensagem: " + msgDecrypted + " \n\n");
 						}	
-						
-						result = sb.toString();
-						sc.close();
+					
+						System.out.println(sb.toString());
+//						sc.close();
+					} else {
+						result = (String) inStream.readObject();
+						System.out.println(result);
 					}
 					
-					System.out.println(result);
 
 					if ((userActionSplited[0].equals("view") || userActionSplited[0].equals("v"))
 							&& !result.equals("This Wine doesnt exist")) {
@@ -261,8 +260,8 @@ public class Tintolmarket {
 		}
 	}
 	
-	private static String decryptMessage(String msgEncrypted, Cipher cipher) throws IllegalBlockSizeException, BadPaddingException {
-		byte[] decryptedData = cipher.doFinal(msgEncrypted.getBytes());
+	private static String decryptMessage(byte[] msgEncrypted, Cipher cipher) throws IllegalBlockSizeException, BadPaddingException {
+		byte[] decryptedData = cipher.doFinal(msgEncrypted);
 		return new String(decryptedData);
 	}
 

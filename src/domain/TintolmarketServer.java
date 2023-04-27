@@ -1,6 +1,7 @@
 package domain;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -67,7 +68,7 @@ public class TintolmarketServer {
 	private static MessageCatalog messageCatalog;
 	private static BlockChain blockchain;
 
-	public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
 		System.out.println("servidor: main");
 
@@ -133,7 +134,7 @@ public class TintolmarketServer {
 	}
 
 	@SuppressWarnings("resource")
-	public void startServer(SSLServerSocket sslServerSocket) throws IOException, NoSuchAlgorithmException {
+	public void startServer(SSLServerSocket sslServerSocket) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
 		initializeMemory();
 
@@ -149,41 +150,46 @@ public class TintolmarketServer {
 		}
 	}
 
-	protected void initializeMemory() throws IOException {
+	protected void initializeMemory() throws IOException, ClassNotFoundException {
 
 		userCatalog.initializeUserCatalog();
 		initializeSellsCatalog();
 		initializeWineCatalog();
 		initializeMessagesStore();
-		
-//		try {
-			blockchain.initializeBlockChain();
-//			if (!blockchain.verify(userCatalog)) {
-//				System.out.println("Blockchain corrompida");
-//				System.exit(0);
-//			}
-//		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
-//			e.printStackTrace();
-//		}
+
+		//		try {
+		blockchain.initializeBlockChain();
+		//			if (!blockchain.verify(userCatalog)) {
+		//				System.out.println("Blockchain corrompida");
+		//				System.exit(0);
+		//			}
+		//		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
+		//			e.printStackTrace();
+		//		}
 	}
 
-	private synchronized void initializeMessagesStore() {
-		File messagesFile = new File(MSGCATFILE);
+	private synchronized void initializeMessagesStore() throws IOException, ClassNotFoundException {
 
-		Scanner fileSc = null;
+		ObjectInputStream objectInputStream = null;
 		try {
-			fileSc = new Scanner(messagesFile);
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
+			objectInputStream = new ObjectInputStream(new FileInputStream(MSGCATFILE));
+			Mensagem obj = null;
+			while ((obj = (Mensagem) objectInputStream.readObject()) != null) {
+				messageCatalog.add(obj);
+			}
+		} catch (EOFException e) {
+			// End of file reached, do nothing
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		} finally {
+			if (objectInputStream != null) {
+				try {
+					objectInputStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 		}
-
-		while (fileSc.hasNextLine()) {
-			String[] currentLine = fileSc.nextLine().split(";");
-			if (!currentLine[0].equals(""))
-				messageCatalog.add(new Mensagem(currentLine[0], currentLine[1], currentLine[2]));
-		}
-
-		fileSc.close();
 	}
 
 	private synchronized void initializeSellsCatalog() {
@@ -232,7 +238,7 @@ public class TintolmarketServer {
 		private ObjectOutputStream outStream;
 		private ObjectInputStream inStream;
 		private AuthenticationValidator authValidator;
-		
+
 		ClientHandler(Socket sslServerSocket) {
 			socket = sslServerSocket;
 
@@ -451,7 +457,7 @@ public class TintolmarketServer {
 
 				Transaction currentTransaction = blockchain.createTransaction(TransactionType.SELL, wineID, quantity,
 						value, seller);
-				
+
 				outStream.writeObject("Do you want to confirm the SELL operation? (yes or no)");
 
 				String confirmation = (String) inStream.readObject(); // Receber confirmacao
@@ -467,10 +473,10 @@ public class TintolmarketServer {
 
 				//verificar assinatura
 				boolean isSignatureValid = authValidator.verifySignature(dataToVerify, signedContent);
-				
+
 				if (!isSignatureValid)
 					return "Content signed incorrect, SELL operation canceled";
-				
+
 				currentTransaction.setSignature(signedContent);
 				blockchain.addTransaction(currentTransaction);
 
@@ -514,7 +520,7 @@ public class TintolmarketServer {
 					for (Sell sell : wineSales) {
 						if (sell.getQuantity() > 0) {
 							result.append(" Seller: " + sell.getSeller() + "; Value: " + sell.getValue()
-									+ "; Quantity: " + sell.getQuantity() + "\n");
+							+ "; Quantity: " + sell.getQuantity() + "\n");
 						}
 					}
 				}
@@ -581,7 +587,7 @@ public class TintolmarketServer {
 
 				//verificar assinatura
 				boolean isSignatureValid = authValidator.verifySignature(dataToVerify, signedContent);
-				
+
 				if (!isSignatureValid)
 					return "Content signed incorrect, BUY operation canceled";
 
@@ -697,21 +703,25 @@ public class TintolmarketServer {
 		private String talkFunc(String usersFilename, String messagesFilename, String clientIDSender, String message,
 				String clientIDDest) throws IOException, ClassNotFoundException {
 
-			String dataEncrypted = (String) inStream.readObject();
-			
+			byte[] dataEncrypted = (byte[]) inStream.readObject();
+
 			if (userCatalog.exists(clientIDDest)) {
 
-				OutputStream addMessage = new FileOutputStream(messagesFilename, true);
+				ObjectOutputStream  addMessage = new ObjectOutputStream(new FileOutputStream(messagesFilename, true));
 
-				String messageRegist;
-				if (messageCatalog.getSize() == 0)
-					messageRegist = (clientIDSender + ";" + clientIDDest + ";" + dataEncrypted);
-				else
-					messageRegist = ("\n" + clientIDSender + ";" + clientIDDest + ";" +  dataEncrypted);
+				Mensagem currentMsg = new Mensagem(clientIDSender, clientIDDest, dataEncrypted);
+				messageCatalog.add(currentMsg);
 
-				messageCatalog.add(new Mensagem(clientIDSender, clientIDDest, dataEncrypted));
+
+				//				String messageRegist;
+				//				if (messageCatalog.getSize() == 0)
+				//					messageRegist = (clientIDSender + ";" + clientIDDest + ";" + dataEncrypted);
+				//				else
+				//					messageRegist = ("\n" + clientIDSender + ";" + clientIDDest + ";" +  dataEncrypted);
+
 				synchronized (addMessage) {
-					addMessage.write(messageRegist.getBytes(), 0, messageRegist.length());
+					addMessage.writeObject(currentMsg);
+					//					addMessage.write(messageRegist.getBytes(), 0, messageRegist.length());
 					addMessage.close();
 				}
 
@@ -721,268 +731,242 @@ public class TintolmarketServer {
 			return "Unsent message, user not found.";
 		}
 
-		private synchronized String readFunc(String filename, String clientID) {
+		private synchronized ArrayList<Mensagem> readFunc(String filename, String clientID) {
+			ArrayList<Mensagem> messagesForClient = new ArrayList<>();
+			ObjectOutputStream objectOutputStream = null;
+			try {
+				if (messageCatalog.existsMessagesFor(clientID)) {
+					messagesForClient = messageCatalog.getMessagesForClient(clientID);
 
-			StringBuilder sb = new StringBuilder();
-//			Map<String, byte[]> messages = new HashMap<>();
-			if (messageCatalog.existsMessagesFor(clientID)) {
-				ArrayList<Mensagem> messagesForClient = messageCatalog.getMessagesForClient(clientID);
-				
-				
-				byte[] decodedMessage = null;
-				for (Mensagem m : messagesForClient) {
-//					messages.put(m.getSender(), Base64.getDecoder().decode(m.getMessage()));
-					decodedMessage = Base64.getDecoder().decode(m.getMessage());
-					sb.append(m.getSender() + ":" + Base64.getDecoder().decode(m.getMessage()) + "\n");
-					messageCatalog.remove(m);
+					for (Mensagem m : messagesForClient) {
+						messageCatalog.remove(m);
+					}
+
+					objectOutputStream = new ObjectOutputStream(new FileOutputStream(filename));
+
+					for (Mensagem m : messageCatalog.getAllMessages()) {
+						objectOutputStream.writeObject(m);
+					}
 				}
-				
-//				KeyStore ksTemp;
-//				PrivateKey pkTemp;
-//				try {
-//					ksTemp = KeyStore.getInstance("JKS");
-//					ksTemp.load(new FileInputStream("./src/keys/client1Keys"), "client1Keys".toCharArray());
-//					pkTemp = (PrivateKey)ksTemp.getKey("client1Keys", "client1Keys".toCharArray());
-//					Cipher cipher = Cipher.getInstance("RSA");
-//					cipher.init(Cipher.DECRYPT_MODE, pkTemp);
-//					byte[] decryptedData = cipher.doFinal(decodedMessage);
-//					System.out.println("DECRYPTEDDDD " + new String(decryptedData));
-//					
-//				} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | UnrecoverableKeyException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-//					e.printStackTrace();
-//				}
-				
 
-				File messagesFile = new File(filename);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				if (objectOutputStream != null) {
+					try {
+						objectOutputStream.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			return messagesForClient;
+		}
 
-				Scanner messagesSC = null;
+
+	}
+
+	private void exitFunc(ObjectInputStream inStream, ObjectOutputStream outStream, Socket sock)
+			throws IOException {
+		inStream.close();
+		outStream.close();
+		sock.close();
+		System.exit(0);
+	}
+
+	private synchronized void editFile(String filename, String editFileLine, int value, int quantity,
+			String operation) {
+
+		File winesCatalog = new File(filename);
+		Scanner winesSc = null;
+
+		try {
+			winesSc = new Scanner(winesCatalog);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+
+		Boolean isFound = false;
+		while (winesSc.hasNextLine() && !isFound) {
+
+			String wineFileLine = winesSc.nextLine();
+			String[] wineFileLineSplitted = wineFileLine.split(";");
+
+			if (editFileLine.equals(wineFileLine)) {
+				isFound = true;
+
+				File fileToBeModified = new File(filename);
+				String oldContent = "";
+				BufferedReader reader = null;
+				FileWriter writer = null;
 
 				try {
-					messagesSC = new Scanner(messagesFile);
-				} catch (FileNotFoundException e1) {
-					e1.printStackTrace();
-				}
+					reader = new BufferedReader(new FileReader(fileToBeModified));
 
-				while (messagesSC.hasNextLine()) {
+					// Reading all the lines of input text file into oldContent
 
-					String messageFileLine = messagesSC.nextLine();
-					String[] messageFileLineSplitted = messageFileLine.split(";");
+					String line = reader.readLine();
 
-					if (clientID.equals(messageFileLineSplitted[1])) {
-						editFile(filename, messageFileLine, 0, 0, "read");
+					while (line != null) {
+
+						oldContent = oldContent + line + System.lineSeparator();
+						line = reader.readLine();
 					}
-				}
 
-				return sb.toString();
+					String newContentWithoutNewLine = "";
 
-			} else
-				return "You dont have any message to read.";
+					switch (operation) {
 
-		}
+					case "buy":
 
-		private void exitFunc(ObjectInputStream inStream, ObjectOutputStream outStream, Socket sock)
-				throws IOException {
-			inStream.close();
-			outStream.close();
-			sock.close();
-			System.exit(0);
-		}
+						String newStringBuy = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";" + value
+								+ ";" + String.valueOf(Integer.parseInt(wineFileLineSplitted[3]) - quantity) + ";"
+								+ wineFileLineSplitted[4]);
 
-		private synchronized void editFile(String filename, String editFileLine, int value, int quantity,
-				String operation) {
+						String newContentBuy = oldContent.replace(wineFileLine, newStringBuy);
+						newContentWithoutNewLine = newContentBuy.substring(0, newContentBuy.length() - 2);
+						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
+						.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) - quantity);
+						break;
 
-			File winesCatalog = new File(filename);
-			Scanner winesSc = null;
+					case "sell":
 
-			try {
-				winesSc = new Scanner(winesCatalog);
-			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
-			}
+						String newStringSell = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";"
+								+ value + ";" + String.valueOf(Integer.parseInt(wineFileLineSplitted[3]) + quantity)
+								+ ";" + wineFileLineSplitted[4]);
 
-			Boolean isFound = false;
-			while (winesSc.hasNextLine() && !isFound) {
+						String newContentSell = oldContent.replace(wineFileLine, newStringSell);
+						newContentWithoutNewLine = newContentSell.substring(0, newContentSell.length() - 2);
+						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
+						.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) + quantity);
+						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setValue(value);
+						break;
 
-				String wineFileLine = winesSc.nextLine();
-				String[] wineFileLineSplitted = wineFileLine.split(";");
+					case "sellDifPrice":
 
-				if (editFileLine.equals(wineFileLine)) {
-					isFound = true;
+						String newStringSellDifPrice = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1]
+								+ ";" + value + ";" + quantity + ";" + wineFileLineSplitted[4]);
 
-					File fileToBeModified = new File(filename);
-					String oldContent = "";
-					BufferedReader reader = null;
-					FileWriter writer = null;
+						String newContentSellDifPrice = oldContent.replace(wineFileLine, newStringSellDifPrice);
+						newContentWithoutNewLine = newContentSellDifPrice.substring(0,
+								newContentSellDifPrice.length() - 2);
 
+						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
+						.setQuantity(quantity);
+						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setValue(value);
+						break;
+
+					case "read":
+						String newStringRead = "";
+						String newContentRead = oldContent.replace(wineFileLine + "\r\n", newStringRead);
+
+						if (newContentRead.equals(""))
+							newContentWithoutNewLine = "";
+						else
+							newContentWithoutNewLine = newContentRead.substring(0, newContentRead.length() - 2);
+
+						break;
+					}
+
+					writer = new FileWriter(fileToBeModified);
+					writer.write(newContentWithoutNewLine);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
 					try {
-						reader = new BufferedReader(new FileReader(fileToBeModified));
-
-						// Reading all the lines of input text file into oldContent
-
-						String line = reader.readLine();
-
-						while (line != null) {
-
-							oldContent = oldContent + line + System.lineSeparator();
-							line = reader.readLine();
-						}
-
-						String newContentWithoutNewLine = "";
-
-						switch (operation) {
-
-						case "buy":
-
-							String newStringBuy = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";" + value
-									+ ";" + String.valueOf(Integer.parseInt(wineFileLineSplitted[3]) - quantity) + ";"
-									+ wineFileLineSplitted[4]);
-
-							String newContentBuy = oldContent.replace(wineFileLine, newStringBuy);
-							newContentWithoutNewLine = newContentBuy.substring(0, newContentBuy.length() - 2);
-							sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
-									.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) - quantity);
-							break;
-
-						case "sell":
-
-							String newStringSell = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";"
-									+ value + ";" + String.valueOf(Integer.parseInt(wineFileLineSplitted[3]) + quantity)
-									+ ";" + wineFileLineSplitted[4]);
-
-							String newContentSell = oldContent.replace(wineFileLine, newStringSell);
-							newContentWithoutNewLine = newContentSell.substring(0, newContentSell.length() - 2);
-							sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
-									.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) + quantity);
-							sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setValue(value);
-							break;
-
-						case "sellDifPrice":
-
-							String newStringSellDifPrice = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1]
-									+ ";" + value + ";" + quantity + ";" + wineFileLineSplitted[4]);
-
-							String newContentSellDifPrice = oldContent.replace(wineFileLine, newStringSellDifPrice);
-							newContentWithoutNewLine = newContentSellDifPrice.substring(0,
-									newContentSellDifPrice.length() - 2);
-
-							sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
-									.setQuantity(quantity);
-							sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setValue(value);
-							break;
-
-						case "read":
-							String newStringRead = "";
-							String newContentRead = oldContent.replace(wineFileLine + "\r\n", newStringRead);
-
-							if (newContentRead.equals(""))
-								newContentWithoutNewLine = "";
-							else
-								newContentWithoutNewLine = newContentRead.substring(0, newContentRead.length() - 2);
-
-							break;
-						}
-
-						writer = new FileWriter(fileToBeModified);
-						writer.write(newContentWithoutNewLine);
-
+						reader.close();
+						writer.close();
 					} catch (IOException e) {
 						e.printStackTrace();
-					} finally {
-						try {
-							reader.close();
-							writer.close();
-						} catch (IOException e) {
-							e.printStackTrace();
 
-						}
 					}
 				}
 			}
 		}
+	}
 
-		private synchronized void editWalletFile(String userWallet, String editFileline, int balance, String ID) {
+	private synchronized void editWalletFile(String userWallet, String editFileline, int balance, String ID) {
 
-			File usersWallet = new File(userWallet);
-			Scanner walletSc = null;
+		File usersWallet = new File(userWallet);
+		Scanner walletSc = null;
 
-			try {
-				walletSc = new Scanner(usersWallet);
-			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
-			}
+		try {
+			walletSc = new Scanner(usersWallet);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
 
-			Boolean isFound = false;
-			while (walletSc.hasNextLine() && !isFound) {
+		Boolean isFound = false;
+		while (walletSc.hasNextLine() && !isFound) {
 
-				String walletFileLine = walletSc.nextLine();
-				String[] walletFileLineSplitted = walletFileLine.split(":");
+			String walletFileLine = walletSc.nextLine();
+			String[] walletFileLineSplitted = walletFileLine.split(":");
 
-				if (editFileline.split(";")[0].equals(walletFileLineSplitted[0])) {
-					isFound = true;
+			if (editFileline.split(";")[0].equals(walletFileLineSplitted[0])) {
+				isFound = true;
 
-					File fileToBeModified = new File(userWallet);
+				File fileToBeModified = new File(userWallet);
 
-					String oldContent = "";
+				String oldContent = "";
 
-					BufferedReader reader = null;
+				BufferedReader reader = null;
 
-					FileWriter writer = null;
+				FileWriter writer = null;
 
+				try {
+					reader = new BufferedReader(new FileReader(fileToBeModified));
+
+					String line = reader.readLine();
+
+					while (line != null) {
+
+						oldContent = oldContent + line + System.lineSeparator();
+						line = reader.readLine();
+					}
+
+					String newContentWithoutNewLine = "";
+
+					switch (ID) {
+					case "client":
+						String newStringCWallet = (walletFileLineSplitted[0] + ":" + String.valueOf(balance));
+						String newContentCWallet = oldContent.replace(walletFileLine, newStringCWallet);
+						newContentWithoutNewLine = newContentCWallet.substring(0, newContentCWallet.length() - 2);
+						userCatalog.getUserByID(walletFileLineSplitted[0]).setBalance(balance);
+						break;
+
+					case "seller":
+						String newStringSWallet = (walletFileLineSplitted[0] + ":" + String.valueOf(balance));
+						String newContentSWallet = oldContent.replace(walletFileLine, newStringSWallet);
+						newContentWithoutNewLine = newContentSWallet.substring(0, newContentSWallet.length() - 2);
+						userCatalog.getUserByID(walletFileLineSplitted[0]).setBalance(balance);
+						break;
+					}
+
+					writer = new FileWriter(fileToBeModified);
+
+					writer.write(newContentWithoutNewLine);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
 					try {
-						reader = new BufferedReader(new FileReader(fileToBeModified));
+						reader.close();
 
-						String line = reader.readLine();
-
-						while (line != null) {
-
-							oldContent = oldContent + line + System.lineSeparator();
-							line = reader.readLine();
-						}
-
-						String newContentWithoutNewLine = "";
-
-						switch (ID) {
-						case "client":
-							String newStringCWallet = (walletFileLineSplitted[0] + ":" + String.valueOf(balance));
-							String newContentCWallet = oldContent.replace(walletFileLine, newStringCWallet);
-							newContentWithoutNewLine = newContentCWallet.substring(0, newContentCWallet.length() - 2);
-							userCatalog.getUserByID(walletFileLineSplitted[0]).setBalance(balance);
-							break;
-
-						case "seller":
-							String newStringSWallet = (walletFileLineSplitted[0] + ":" + String.valueOf(balance));
-							String newContentSWallet = oldContent.replace(walletFileLine, newStringSWallet);
-							newContentWithoutNewLine = newContentSWallet.substring(0, newContentSWallet.length() - 2);
-							userCatalog.getUserByID(walletFileLineSplitted[0]).setBalance(balance);
-							break;
-						}
-
-						writer = new FileWriter(fileToBeModified);
-
-						writer.write(newContentWithoutNewLine);
+						writer.close();
 					} catch (IOException e) {
 						e.printStackTrace();
-					} finally {
-						try {
-							reader.close();
 
-							writer.close();
-						} catch (IOException e) {
-							e.printStackTrace();
-
-						}
 					}
 				}
-
 			}
-		}
 
-		private String getMenu() {
-			return "\nActions:\nadd <wine> <image>\n" + "sell <wine> <value> <quantity>\n" + "view <wine>\n"
-					+ "buy <wine> <seller> <quantity>\n" + "wallet\n" + "classify <wine> <stars>\n"
-					+ "talk <user> <message>\n" + "read\n" + "list\n" + "exit\n";
 		}
+	}
 
+	private String getMenu() {
+		return "\nActions:\nadd <wine> <image>\n" + "sell <wine> <value> <quantity>\n" + "view <wine>\n"
+				+ "buy <wine> <seller> <quantity>\n" + "wallet\n" + "classify <wine> <stars>\n"
+				+ "talk <user> <message>\n" + "read\n" + "list\n" + "exit\n";
 	}
 
 }
