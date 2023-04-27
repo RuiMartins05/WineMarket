@@ -144,7 +144,6 @@ public class TintolmarketServer {
 
 	protected void initializeMemory() throws IOException, ClassNotFoundException {
 
-		userCatalog.initializeUserCatalog();
 		initializeSellsCatalog();
 		initializeWineCatalog();
 		initializeMessagesStore();
@@ -157,6 +156,7 @@ public class TintolmarketServer {
 			}else {
 				System.out.println("Blockchain Verificada");
 			}
+
 		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
 			System.out.println("Blockchain corrompida");
 			System.exit(0);
@@ -262,7 +262,10 @@ public class TintolmarketServer {
 				}
 
 				String certificadoStr = "client" + clientID + "KeyRSApub.cer";
+				
+				userCatalog.initializeUserCatalog();
 				clientExistsFlag = userCatalog.exists(clientID);
+				userCatalog.resetCatalog();
 
 				// indicar o cliente se ele existe ou nao
 				outStream.writeObject(clientExistsFlag);
@@ -278,7 +281,9 @@ public class TintolmarketServer {
 					Certificate certificate = null;
 
 					if (clientExistsFlag) {
+						userCatalog.initializeUserCatalog();
 						String certificateStr = userCatalog.getCertificadoByID(clientID);
+						userCatalog.resetCatalog();
 						certificate = authValidator.getCertificate(certificateStr);
 					} else {
 						certificate = authValidator.getCertificate();
@@ -295,10 +300,12 @@ public class TintolmarketServer {
 					}
 
 					if (!clientExistsFlag) {
-
+						
+						userCatalog.initializeUserCatalog();
 						userCatalog.registNewUser(clientID, certificadoStr);
 						userCatalog.registNewWallet(clientID);
 						userCatalog.add(new User(clientID, certificadoStr));
+						userCatalog.resetCatalog();
 
 						outStream.writeObject("Novo cliente " + clientID + " registado");
 					}
@@ -468,7 +475,7 @@ public class TintolmarketServer {
 
 				currentTransaction.setSignature(signedContent);
 				blockchain.addTransaction(currentTransaction);
-				
+
 				if (alreadyOnSale)
 					return "Wine is now on sale";
 
@@ -610,7 +617,10 @@ public class TintolmarketServer {
 		}
 
 		private int walletFunc(String clientID) {
-			return userCatalog.getUserByID(clientID).getBalance();
+			userCatalog.initializeUserCatalog();
+			int res = userCatalog.getUserByID(clientID).getBalance();
+			userCatalog.resetCatalog();
+			return res;
 		}
 
 		private synchronized String classifyFunc(String wine, int stars) {
@@ -697,8 +707,9 @@ public class TintolmarketServer {
 
 			byte[] dataEncrypted = (byte[]) inStream.readObject();
 
+			userCatalog.initializeUserCatalog();
 			if (userCatalog.exists(clientIDDest)) {
-
+				userCatalog.resetCatalog();
 				ObjectOutputStream  addMessage = new ObjectOutputStream(new FileOutputStream(messagesFilename, true));
 
 				Mensagem currentMsg = new Mensagem(clientIDSender, clientIDDest, dataEncrypted);
@@ -711,8 +722,10 @@ public class TintolmarketServer {
 				}
 
 				return "Message sent.";
+			} else {
+				userCatalog.resetCatalog();
 			}
-
+			
 			return "Unsent message, user not found.";
 		}
 
@@ -918,14 +931,18 @@ public class TintolmarketServer {
 						String newStringCWallet = (walletFileLineSplitted[0] + ":" + String.valueOf(balance));
 						String newContentCWallet = oldContent.replace(walletFileLine, newStringCWallet);
 						newContentWithoutNewLine = newContentCWallet.substring(0, newContentCWallet.length() - 2);
+						userCatalog.initializeUserCatalog();
 						userCatalog.getUserByID(walletFileLineSplitted[0]).setBalance(balance);
+						userCatalog.resetCatalog();
 						break;
 
 					case "seller":
 						String newStringSWallet = (walletFileLineSplitted[0] + ":" + String.valueOf(balance));
 						String newContentSWallet = oldContent.replace(walletFileLine, newStringSWallet);
 						newContentWithoutNewLine = newContentSWallet.substring(0, newContentSWallet.length() - 2);
+						userCatalog.initializeUserCatalog();
 						userCatalog.getUserByID(walletFileLineSplitted[0]).setBalance(balance);
+						userCatalog.resetCatalog();
 						break;
 					}
 

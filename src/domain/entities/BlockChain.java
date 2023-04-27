@@ -184,7 +184,7 @@ public class BlockChain {
 		return sb.toString();
 	}
 
-	public boolean verify(UserCatalog uc) throws NoSuchAlgorithmException, CertificateException, IOException, InvalidKeyException, SignatureException {
+	public boolean verify(UserCatalog userCatalog) throws NoSuchAlgorithmException, CertificateException, IOException, InvalidKeyException, SignatureException {
 	
 		for (int i = 1; i <= this.nextBlockID - 2; i++) {
 			
@@ -198,7 +198,10 @@ public class BlockChain {
 				byte[] contentSigned = currentTransaction.getSignedContent();
 				
 				//aqui tem q se obter atraves do catalogo de utilizadores
-				Certificate c = this.getCertificate(uc.getCertificadoByID(transactionOwner));
+				userCatalog.initializeUserCatalog();
+				Certificate c = this.getCertificate(userCatalog.getCertificadoByID(transactionOwner));
+				userCatalog.resetCatalog();
+				
 				PublicKey pk = c.getPublicKey();
 				s.initVerify(pk);
 				s.update(contentNotSigned.getBytes());

@@ -34,6 +34,10 @@ public class UserCatalog {
 		return INSTANCE;
 	}
 
+	public void resetCatalog() {
+		this.userCatalog = new ArrayList<>();
+	}
+
 	public void initializeUserCatalog() {
 
 		Scanner usersCatalogDecrypted = new Scanner(FileEncryptorDecryptor.decryptUsersCat(passwordUsers));
