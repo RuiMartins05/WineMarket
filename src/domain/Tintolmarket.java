@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -136,7 +136,8 @@ public class Tintolmarket {
 					System.out.println("Choose action:\n");
 
 					userAction = clientInterface.nextLine();
-					String[] userActionSplited = userAction.split(" "); //se a msg tiver mais do que uma palavra funciona?
+					String[] userActionSplited = userAction.split(" "); // se a msg tiver mais do que uma palavra
+					// funciona?
 
 					if (userActionSplited[0].equals("talk") || userActionSplited[0].equals("t")) {
 
@@ -156,12 +157,18 @@ public class Tintolmarket {
 						is.close();
 
 						PublicKey pk = c.getPublicKey();
-
 						Cipher cipher = Cipher.getInstance("RSA");
 						cipher.init(Cipher.ENCRYPT_MODE, pk);
 
 						// Encrypt the toEncrypt string
 						byte[] encryptedData = cipher.doFinal(toEncrypt.getBytes());
+//						String encodedData = Base64.getEncoder().encodeToString(encryptedData);
+
+//						// Pad the encoded string if necessary
+//						int padding = (4 - encodedData.length() % 4) % 4;
+//						if (padding > 0) {
+//							encodedData += "=".repeat(padding);
+//						}
 
 						userAction = userActionSplited[0] + " " + userActionSplited[1];
 						outStream.writeObject(userAction);
@@ -169,7 +176,7 @@ public class Tintolmarket {
 					} else {
 						outStream.writeObject(userAction);
 					}
-					
+
 					if (userActionSplited[0].equals("add") || userActionSplited[0].equals("a")) {
 						SendImagesHandler sendImgHandler = new SendImagesHandler(outStream, "./src/imgClient/");
 						try {
@@ -203,7 +210,6 @@ public class Tintolmarket {
 					if (userActionSplited[0].equals("read") || userActionSplited[0].equals("r")) {
 						
 						ArrayList<Mensagem> resultMensagens = (ArrayList<Mensagem>) inStream.readObject();
-	
 						
 						Cipher cipher = Cipher.getInstance("RSA");
 						cipher.init(Cipher.DECRYPT_MODE, clientAuth.getPrivateKey());
@@ -217,12 +223,11 @@ public class Tintolmarket {
 						}	
 					
 						System.out.println(sb.toString());
-//						sc.close();
+
 					} else {
 						result = (String) inStream.readObject();
 						System.out.println(result);
 					}
-					
 
 					if ((userActionSplited[0].equals("view") || userActionSplited[0].equals("v"))
 							&& !result.equals("This Wine doesnt exist")) {
@@ -263,19 +268,6 @@ public class Tintolmarket {
 	private static String decryptMessage(byte[] msgEncrypted, Cipher cipher) throws IllegalBlockSizeException, BadPaddingException {
 		byte[] decryptedData = cipher.doFinal(msgEncrypted);
 		return new String(decryptedData);
-	}
-
-	private static byte[] longToBytes(long x) {
-		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-		buffer.putLong(x);
-		return buffer.array();
-	}
-
-	private static long bytesToLong(byte[] bytes) {
-		ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-		buffer.put(bytes);
-		buffer.flip();// need flip
-		return buffer.getLong();
 	}
 
 }

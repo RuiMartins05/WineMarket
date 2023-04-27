@@ -19,19 +19,11 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SignatureException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Scanner;
-import java.util.Map;
-import java.util.HashMap;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -166,6 +158,7 @@ public class TintolmarketServer {
 		//		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
 		//			e.printStackTrace();
 		//		}
+
 	}
 
 	private synchronized void initializeMessagesStore() throws IOException, ClassNotFoundException {
@@ -471,7 +464,7 @@ public class TintolmarketServer {
 				String dataToVerify = (String) inStream.readObject();
 				byte[] signedContent = (byte[]) inStream.readObject();
 
-				//verificar assinatura
+				// verificar assinatura
 				boolean isSignatureValid = authValidator.verifySignature(dataToVerify, signedContent);
 
 				if (!isSignatureValid)
@@ -585,7 +578,7 @@ public class TintolmarketServer {
 				System.out.println("DATA SIGNED IN BYTES " + signedContent);
 				currentTransaction.setSignature(signedContent);
 
-				//verificar assinatura
+				// verificar assinatura
 				boolean isSignatureValid = authValidator.verifySignature(dataToVerify, signedContent);
 
 				if (!isSignatureValid)
@@ -713,15 +706,8 @@ public class TintolmarketServer {
 				messageCatalog.add(currentMsg);
 
 
-				//				String messageRegist;
-				//				if (messageCatalog.getSize() == 0)
-				//					messageRegist = (clientIDSender + ";" + clientIDDest + ";" + dataEncrypted);
-				//				else
-				//					messageRegist = ("\n" + clientIDSender + ";" + clientIDDest + ";" +  dataEncrypted);
-
 				synchronized (addMessage) {
 					addMessage.writeObject(currentMsg);
-					//					addMessage.write(messageRegist.getBytes(), 0, messageRegist.length());
 					addMessage.close();
 				}
 
@@ -730,6 +716,7 @@ public class TintolmarketServer {
 
 			return "Unsent message, user not found.";
 		}
+
 
 		private synchronized ArrayList<Mensagem> readFunc(String filename, String clientID) {
 			ArrayList<Mensagem> messagesForClient = new ArrayList<>();
