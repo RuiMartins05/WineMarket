@@ -1,13 +1,18 @@
 package domain.entities;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 import enums.TransactionType;
 
-public class Block {
+public class Block implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private byte[] previousHash;
 	private long block_id;
 	private long n_trx;
@@ -94,5 +99,4 @@ public class Block {
 
 		return sb.toString();
 	}
-
 }

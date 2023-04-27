@@ -1,9 +1,15 @@
 package domain.entities;
 
+import java.io.Serializable;
+
 import enums.TransactionType;
 
-public class Transaction {
+public class Transaction implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private long transactionID;
 	private TransactionType type;
 	private String wineID;

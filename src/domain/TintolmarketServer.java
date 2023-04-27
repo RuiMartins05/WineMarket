@@ -149,15 +149,18 @@ public class TintolmarketServer {
 		initializeWineCatalog();
 		initializeMessagesStore();
 
-		//		try {
-		blockchain.initializeBlockChain();
-		//			if (!blockchain.verify(userCatalog)) {
-		//				System.out.println("Blockchain corrompida");
-		//				System.exit(0);
-		//			}
-		//		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
-		//			e.printStackTrace();
-		//		}
+		try {
+			blockchain.initializeBlockChain();
+			if (!blockchain.verify(userCatalog)) {
+				System.out.println("Blockchain corrompida");
+				System.exit(0);
+			}else {
+				System.out.println("Blockchain Verificada");
+			}
+		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
+			System.out.println("Blockchain corrompida");
+			System.exit(0);
+		}
 
 	}
 
