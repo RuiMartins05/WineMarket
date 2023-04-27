@@ -1,2 +1,5 @@
 /domain/
 /blockchain/
+/catalogs/
+/userCatalog.txt
+/userCatalogEncrypted.txt

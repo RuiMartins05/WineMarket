@@ -45,6 +45,10 @@ public class UserCatalog {
 		return INSTANCE;
 	}
 	
+	public void resetCatalog() {
+		this.userCatalog = new ArrayList<>();
+	}
+	
 	public void initializeUserCatalog() {
 		
 		Scanner usersCatalogDecrypted = new Scanner(FileEncryptorDecryptor.decryptUsersCat(this.usersStr, passwordUsers));
@@ -64,7 +68,7 @@ public class UserCatalog {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-
+		
 		while (walletSc.hasNextLine()) {
 			String[] currentLine = walletSc.nextLine().split(":");
 			this.getUserByID(currentLine[0]).setBalance(Integer.parseInt(currentLine[1]));
