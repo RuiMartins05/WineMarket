@@ -1,13 +1,23 @@
 package domain.entities;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
-
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class FileEncryptorDecryptor {
 
@@ -25,9 +35,9 @@ public class FileEncryptorDecryptor {
 		}
 	}
 
-	public static String decryptUsersCat(String inputFile, String pass) {
+	public static String decryptUsersCat(String pass) {
 
-		String decrypted = null; 
+		String decrypted = null;
 
 		try {
 			decrypted = decryptUsers("./src/userCatalogEncrypted.txt", pass);
@@ -41,8 +51,7 @@ public class FileEncryptorDecryptor {
 		return decrypted;
 	}
 
-
-	//-------------------------------------
+	// -------------------------------------
 	// Cifrar
 
 	public static void encryptUsers(String inputFile, String outputFile, String password)
@@ -52,19 +61,21 @@ public class FileEncryptorDecryptor {
 		FileInputStream inFile = new FileInputStream(inputFile);
 		FileOutputStream outFile = new FileOutputStream(outputFile);
 		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-															// neste o numero de bits e variavel (unico que deu para 
-															// corresponder dos dois lados sem dar erro)
+		// neste o numero de bits e variavel (unico que deu para
+		// corresponder dos dois lados sem dar erro)
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
-		// salt aleatorio - garante que, mesmo que duas pessoas usem a mesma pass, as chaves criadas serão diferentes
+		// salt aleatorio - garante que, mesmo que duas pessoas usem a mesma pass, as
+		// chaves criadas serão diferentes
 		salt = generateSalt();
 
 		// cria uma key secreta para se usar na cifra
-		KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);  //dps aqui defini os 128 
+		KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128); // dps aqui defini os 128
 		SecretKey tmp = keyFactory.generateSecret(keySpec);
 		SecretKey key = new SecretKeySpec(tmp.getEncoded(), "AES");
 
-		// iv aleatorio (vetor inicializacao) - permite que blocos parecidos de texto não sejam criptografados da mesma forma
+		// iv aleatorio (vetor inicializacao) - permite que blocos parecidos de texto
+		// não sejam criptografados da mesma forma
 		byte[] iv = new byte[16];
 		SecureRandom random = new SecureRandom();
 		random.nextBytes(iv);
@@ -86,7 +97,7 @@ public class FileEncryptorDecryptor {
 				outFile.write(output);
 			}
 		}
-		byte[] output = cipher.doFinal(); // escreve o resultado final 
+		byte[] output = cipher.doFinal(); // escreve o resultado final
 		if (output != null) {
 			outFile.write(output);
 		}
@@ -103,18 +114,17 @@ public class FileEncryptorDecryptor {
 		return salt;
 	}
 
-	//-------------------------------------
+	// -------------------------------------
 	// Decifrar
 
-	public static String decryptUsers(String inputFile, String password)
-			throws GeneralSecurityException, IOException {
+	public static String decryptUsers(String inputFile, String password) throws GeneralSecurityException, IOException {
 
 		FileInputStream fis = new FileInputStream(inputFile);
 
 		byte[] salt = new byte[8];
 		fis.read(salt);
 
-		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256"); 
+		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
 		KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);
@@ -130,7 +140,7 @@ public class FileEncryptorDecryptor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		// Decrypt the input file
-		byte[] in = new byte[64]; 
+		byte[] in = new byte[64];
 		int read;
 		while ((read = fis.read(in)) != -1) {
 			byte[] output = cipher.update(in, 0, read);

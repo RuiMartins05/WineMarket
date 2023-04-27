@@ -1,2 +1,14 @@
-/domain/
 /blockchain/
+/catalogs/
+/certificates/
+/domain/
+/enums/
+/imgClient/
+/imgServer/
+/keys/
+/messageCatalog.txt
+/sellsCatalog.txt
+/userCatalogEncrypted.txt
+/userWallet.txt
+/wineCatalog.txt
+/userCatalog.txt

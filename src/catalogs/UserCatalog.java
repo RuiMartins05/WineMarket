@@ -1,23 +1,12 @@
 package catalogs;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.spec.KeySpec;
 import java.util.ArrayList;
 import java.util.Scanner;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import domain.entities.FileEncryptorDecryptor;
 import domain.entities.User;
@@ -27,7 +16,7 @@ public class UserCatalog {
 	private String usersStr;
 	private String userWalletsStr;
 	private String passwordUsers;
-	
+
 	private static UserCatalog INSTANCE;
 	private ArrayList<User> userCatalog;
 
@@ -41,13 +30,13 @@ public class UserCatalog {
 	public static UserCatalog getInstance(String usersStr, String userWalletsStr, String passwordCifra) {
 		if (INSTANCE == null)
 			INSTANCE = new UserCatalog(usersStr, userWalletsStr, passwordCifra);
-		
+
 		return INSTANCE;
 	}
-	
+
 	public void initializeUserCatalog() {
-		
-		Scanner usersCatalogDecrypted = new Scanner(FileEncryptorDecryptor.decryptUsersCat(this.usersStr, passwordUsers));
+
+		Scanner usersCatalogDecrypted = new Scanner(FileEncryptorDecryptor.decryptUsersCat(passwordUsers));
 
 		while (usersCatalogDecrypted.hasNextLine()) {
 			String[] currentLine = usersCatalogDecrypted.nextLine().split(":");
@@ -55,7 +44,7 @@ public class UserCatalog {
 		}
 
 		usersCatalogDecrypted.close();
-		
+
 		File userWallets = new File(this.userWalletsStr);
 
 		Scanner walletSc = null;
@@ -75,7 +64,7 @@ public class UserCatalog {
 
 	public synchronized User getUserByID(String id) {
 
-		for (User u : userCatalog) 
+		for (User u : userCatalog)
 			if (u.getID().equals(id))
 				return u;
 
@@ -98,32 +87,39 @@ public class UserCatalog {
 	public synchronized int getSize() {
 		return userCatalog.size();
 	}
-	
+
 	public synchronized String getCertificadoByID(String ID) {
-		for (User u: this.userCatalog)
-			if(u.getID().equals(ID))
+		for (User u : this.userCatalog)
+			if (u.getID().equals(ID))
 				return u.getCertificado();
 		return null;
 	}
-	
+
 	public void registNewUser(String clientID, String certificadoStr) throws IOException {
+
+		String userCatDesencrypted = FileEncryptorDecryptor.decryptUsersCat(certificadoStr);
+
 		File usersCatalog = new File(this.usersStr);
-		
+
 		String newClient = "\n" + clientID + ":" + certificadoStr;
-		
+
 		if (this.getSize() == 0)
 			newClient = clientID + ":" + certificadoStr;
-		
-		OutputStream clientRegister = new FileOutputStream(usersCatalog, true);
+
+		String newDataToCat = userCatDesencrypted + newClient;
+
+		OutputStream clientRegister = new FileOutputStream(usersCatalog);
 		synchronized (clientRegister) {
-			clientRegister.write(newClient.getBytes(), 0, newClient.length());
+			clientRegister.write(newDataToCat.getBytes(), 0, newDataToCat.length());
 			clientRegister.close();
 		}
+
+		FileEncryptorDecryptor.encryptUsersCat(this.usersStr, this.passwordUsers);
 	}
-	
+
 	public void registNewWallet(String clientID) throws IOException {
 		File userWallets = new File(this.userWalletsStr);
-		
+
 		String usersBalance = "\n" + clientID + ":200";
 		if (this.getSize() == 0)
 			usersBalance = clientID + ":200";
