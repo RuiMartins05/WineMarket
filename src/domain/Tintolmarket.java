@@ -162,13 +162,6 @@ public class Tintolmarket {
 
 						// Encrypt the toEncrypt string
 						byte[] encryptedData = cipher.doFinal(toEncrypt.getBytes());
-//						String encodedData = Base64.getEncoder().encodeToString(encryptedData);
-
-//						// Pad the encoded string if necessary
-//						int padding = (4 - encodedData.length() % 4) % 4;
-//						if (padding > 0) {
-//							encodedData += "=".repeat(padding);
-//						}
 
 						userAction = userActionSplited[0] + " " + userActionSplited[1];
 						outStream.writeObject(userAction);
@@ -192,11 +185,10 @@ public class Tintolmarket {
 						// verificar se é a mensagem de confirmação ou erro no buy
 						String serverResponse = (String) inStream.readObject();
 
-						if (serverResponse.contains("Reasons why you can't buy this wine:")) {
+						if (serverResponse.equals("Reasons why you can't buy this wine:") || serverResponse.equals("This wine doesnt exist")) {
 							System.out.println(serverResponse);
 							continue;
 						} else {
-
 							System.out.println(serverResponse); // mensagem de confirmacao
 							outStream.writeObject(clientInterface.nextLine()); // sim ou nao
 

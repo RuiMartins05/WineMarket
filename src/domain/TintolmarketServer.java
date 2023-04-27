@@ -365,13 +365,8 @@ public class TintolmarketServer {
 
 					} else if ((userActionSplited[0].equals("talk") || userActionSplited[0].equals("t"))) {
 
-						String message = "";
-						for (int i = 2; i < userActionSplited.length; i++) {
-							message += userActionSplited[i] + " ";
-						}
-
 						outStream.writeObject(
-								talkFunc(USERSCATFILE, MSGCATFILE, clientID, message, userActionSplited[1]));
+								talkFunc(USERSCATFILE, MSGCATFILE, clientID, userActionSplited[1]));
 
 					} else if (userActionSplited[0].equals("read") || userActionSplited[0].equals("r")) {
 						outStream.writeObject(readFunc(MSGCATFILE, clientID));
@@ -442,10 +437,8 @@ public class TintolmarketServer {
 				String sellCheck = currentSell.toString();
 				if (value == currentSell.getValue()) {
 					editFile(SELLSCATFILE, sellCheck, value, quantity, "sell");
-					return "Wine is now on sale.";
 				} else {
 					editFile(SELLSCATFILE, sellCheck, value, quantity, "sellDifPrice");
-					return "Wine is now on sale.";
 				}
 			}
 
@@ -475,6 +468,9 @@ public class TintolmarketServer {
 
 				currentTransaction.setSignature(signedContent);
 				blockchain.addTransaction(currentTransaction);
+				
+				if (alreadyOnSale)
+					return "Wine is now on sale";
 
 			} catch (ClassNotFoundException | IOException | InvalidKeyException | NoSuchAlgorithmException
 					| SignatureException e) {
@@ -696,7 +692,7 @@ public class TintolmarketServer {
 
 		}
 
-		private String talkFunc(String usersFilename, String messagesFilename, String clientIDSender, String message,
+		private String talkFunc(String usersFilename, String messagesFilename, String clientIDSender,
 				String clientIDDest) throws IOException, ClassNotFoundException {
 
 			byte[] dataEncrypted = (byte[]) inStream.readObject();

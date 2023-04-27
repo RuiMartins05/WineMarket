@@ -93,7 +93,7 @@ public class BlockChain {
 	public synchronized void addTransaction(Transaction t)
 			throws IOException, InvalidKeyException, NoSuchAlgorithmException, SignatureException {
 
-		int transactionsPerBlock = 2;
+		int transactionsPerBlock = 5;
 
 		if (this.currentBlock.getN_trx() == transactionsPerBlock) {
 
@@ -109,14 +109,9 @@ public class BlockChain {
 			
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(this.getCurrentPath()));
 			
-//			FileWriter fw = new FileWriter(newBlkFile);
 			oos.writeObject(this.currentBlock);
 			oos.close();
-			
-//			FileWriter blockFile = new FileWriter(this.getCurrentPath(), true);
-//			blockFile.write("\n--------\nServer Signature: " + signedContent);
-//			blockFile.flush();
-
+		
 			try {
 				MessageDigest digest = MessageDigest.getInstance("SHA-256");
 				byte[] previousHash = digest.digest(signedContent);
@@ -130,38 +125,10 @@ public class BlockChain {
 		this.nextTransactionID++;
 		
 		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(this.getCurrentPath()));
-//		FileWriter fw = new FileWriter(newBlkFile);
 		oos.writeObject(this.currentBlock);
 		oos.close();
-//		String newContent = this.getNewContent(t, transactionsPerBlock);
-//		FileWriter blockFile = new FileWriter(this.getCurrentPath());
-//		blockFile.write(newContent);
-//		blockFile.close();
-
 
 	}
-
-//	private String getNewContent(Transaction t, int transactionsPerBlock) throws IOException {
-//
-//		String oldContent = "";
-//		String lineToReplace = "n_trx: " + this.currentBlock.getN_trx();
-//		String newLine = "n_trx: " + (this.currentBlock.getN_trx() + 1L);
-//
-//		BufferedReader reader = new BufferedReader(new FileReader(this.getCurrentPath()));
-//
-//		String line = reader.readLine();
-//
-//		while (line != null) {
-//
-//			oldContent += line + System.lineSeparator();
-//			line = reader.readLine();
-//		}
-//
-//		String newContent = oldContent.replace(lineToReplace, newLine);
-//
-//		return newContent += "--------" + t.toString();
-//
-//	}
 
 	private String getCurrentPath() {
 		return this.prefixPath + this.currentBlock.getId() + this.sufixPath;
@@ -197,83 +164,8 @@ public class BlockChain {
 			this.currentBlock = (Block) oos.readObject();
 			this.blockchain.add(this.currentBlock);
 			this.nextBlockID++;
-
+			oos.close();
 		}
-	}
-
-//		Boolean firstTime = true;
-//		// Loop through all blockchain files
-//		while (true) {
-//			String filePath = this.prefixPath + this.nextBlockID + this.sufixPath;
-//			File file = new File(filePath);
-//
-//			if (!file.exists() && firstTime) {
-//				createBlock(null);
-//				break;
-//			}
-//
-//			if (!file.exists()) {
-//				break;
-//			}
-//
-//			String content = new String(Files.readAllBytes(Paths.get(filePath)));
-//			String[] lines = content.split("\n");
-//
-//			firstTime = false;
-//			// Pars
-//			byte[] previousHash = parseHash(lines[0]); //verificar este hash com a ultima assinatura
-//			long blockID = Long.parseLong(lines[1].split(": ")[1].replaceAll("\\r", ""));
-//			int nTrx = Integer.parseInt(lines[2].split(": ")[1].replaceAll("\\r", ""));
-//
-//			// Parse transactions
-//			List<Transaction> transactions = new ArrayList<>();
-//			for (int i = 4; i < lines.length - 2; i += 8) {
-//				long trxID = Long.parseLong(lines[i].split(": ")[1].replaceAll("\\r", ""));
-//
-//				TransactionType trxType = TransactionType
-//						.valueOf(lines[i + 1].split(": ")[1].replaceAll("\\r", "").toUpperCase());
-//
-//				String wineID = lines[i + 2].split(": ")[1].replaceAll("\\r", "");
-//
-//				int unitsNum = Integer.parseInt(lines[i + 3].split(": ")[1].replaceAll("\\r", ""));
-//
-//				int unitPrice = Integer.parseInt(lines[i + 4].split(": ")[1].replaceAll("\\r", ""));
-//
-//				String owner = lines[i + 5].split(": ")[1].replaceAll("\\r", "");
-//
-//				byte[] signedContent = parseSignature(lines[i + 6].split(": ")[1]);
-//
-//				Transaction transactionAux = new Transaction(trxID, trxType, wineID, unitsNum, unitPrice, owner);
-//				transactionAux.setSignature(signedContent);
-//				transactions.add(transactionAux);
-//				this.nextTransactionID++;
-//			}
-//
-//
-//			// Create and add the block to the blockchain
-//			Block block = new Block(blockID, previousHash, nTrx, transactions);
-//
-//			// Parse server signature
-//			if (lines[lines.length - 1].contains("Server Signature")) {
-//				byte[] serverSignature = parseSignature(lines[lines.length - 1].split(": ")[1]);
-//				block.setServerSignature(serverSignature);
-//
-//			}
-//
-//			this.currentBlock = block;
-//			this.blockchain.add(this.currentBlock);
-//			this.nextBlockID++;
-//
-//		}
-	
-
-	private static byte[] parseHash(String hashLine) {
-		String hashValue = hashLine.split(": ")[1];
-		return hashValue.equals("null") ? null : hashValue.getBytes();
-	}
-
-	private static byte[] parseSignature(String signatureString) {
-		return signatureString.getBytes() ;
 	}
 
 	@Override
@@ -326,7 +218,7 @@ public class BlockChain {
 			if (!MessageDigest.isEqual(digest.digest(serverSignature), previousHash))
 				return false;
 		}
-//		
+
 		return true;
 		
 	}
