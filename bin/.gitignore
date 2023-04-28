@@ -1,5 +1,19 @@
-/domain/
 /blockchain/
 /catalogs/
+<<<<<<< HEAD
+/certificates/
+/domain/
+/enums/
+/imgClient/
+/imgServer/
+/keys/
+/messageCatalog.txt
+/sellsCatalog.txt
+/userCatalogEncrypted.txt
+/userWallet.txt
+/wineCatalog.txt
+/userCatalog.txt
+=======
 /userCatalog.txt
 /userCatalogEncrypted.txt
+>>>>>>> 9a254d208ee31194d50136ffbf2afdc68dbb1d91
