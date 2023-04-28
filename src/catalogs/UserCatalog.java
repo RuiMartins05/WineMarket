@@ -101,7 +101,7 @@ public class UserCatalog {
 
 	public void registNewUser(String clientID, String certificadoStr) throws IOException {
 
-		String userCatDesencrypted = FileEncryptorDecryptor.decryptUsersCat(certificadoStr);
+		String userCatDesencrypted = FileEncryptorDecryptor.decryptUsersCat(passwordUsers);
 
 		File usersCatalog = new File(this.usersStr);
 
