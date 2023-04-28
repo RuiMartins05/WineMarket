@@ -22,6 +22,7 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import javax.net.ServerSocketFactory;
@@ -60,7 +61,7 @@ public class TintolmarketServer {
 	private static MessageCatalog messageCatalog;
 	private static BlockChain blockchain;
 
-	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
+	public static void main(String[] args) throws Exception {
 
 		System.out.println("servidor: main");
 
@@ -102,19 +103,34 @@ public class TintolmarketServer {
 		// ------------------------------------
 		// INTEGRIDADE
 
-		File integridadeVerificadaWine = new File(WINECATFILE);
-		File integridadeVerificadaSell = new File(SELLSCATFILE);
-		File integridadeVerificadaMsg = new File(MSGCATFILE);
-		File integridadeVerificadaWallet = new File(WALLETFILE);
+        IntegrationChecker integrityChecker = new IntegrationChecker("key");
 
-		if (IntegrationChecker.checkSumIntegrityVerification(integridadeVerificadaWine, WINECATFILE)
-				&& IntegrationChecker.checkSumIntegrityVerification(integridadeVerificadaSell, SELLSCATFILE)
-				&& IntegrationChecker.checkSumIntegrityVerification(integridadeVerificadaMsg, MSGCATFILE)
-				&& IntegrationChecker.checkSumIntegrityVerification(integridadeVerificadaWallet, WALLETFILE)) {
-			System.out.println("Os ficheiros estao integros.");
-		} else {
-			System.exit(0);
-		}
+        integrityChecker.calculateHmac(WINECATFILE);
+        integrityChecker.calculateHmac(SELLSCATFILE);
+        integrityChecker.calculateHmac(MSGCATFILE);
+        integrityChecker.calculateHmac(WALLETFILE);
+
+        File file = new File("./src/previousHmacs.txt");
+        List<String> fileList = new ArrayList<>();
+
+        fileList.add(WINECATFILE);
+        fileList.add(SELLSCATFILE);
+        fileList.add(MSGCATFILE);
+        fileList.add(WALLETFILE);
+
+        if (!(file.length() > 0)) {
+            integrityChecker.writeHmacs();
+        } else {
+            if (integrityChecker.verifyHmacs(fileList)) {
+                System.out.println("Os ficheiros estao integros.");
+                integrityChecker.writeHmacs();
+            } else {
+                System.out.println("Algum ficheiro esta corrompido.");
+                System.exit(0);
+            }
+        }
+        
+        // ------------------------------------
 
 		System.setProperty("javax.net.ssl.keyStore", "src//keys//" + serverKeyAlias);
 		System.setProperty("javax.net.ssl.keyStorePassword", passwordServerKeyStore);

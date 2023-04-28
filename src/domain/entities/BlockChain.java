@@ -1,13 +1,10 @@
 package domain.entities;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,7 +18,6 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import catalogs.UserCatalog;
@@ -75,11 +71,8 @@ public class BlockChain {
 
 		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(newBlkFile));
 		
-//		FileWriter fw = new FileWriter(newBlkFile);
 		oos.writeObject(newBlock);
 		oos.close();
-//		fw.flush();
-//		fw.close();
 
 		return newBlock;
 	}
@@ -130,7 +123,7 @@ public class BlockChain {
 
 	}
 
-	private String getCurrentPath() {
+	private synchronized String getCurrentPath() {
 		return this.prefixPath + this.currentBlock.getId() + this.sufixPath;
 	}
 
@@ -144,7 +137,7 @@ public class BlockChain {
 	 * servidor
 	 * 
 	 */
-	public void initializeBlockChain() throws IOException, ClassNotFoundException {
+	public synchronized void initializeBlockChain() throws IOException, ClassNotFoundException {
 		Boolean firstTime = true;
 		// Loop through all blockchain files
 		while (true) {
@@ -184,7 +177,7 @@ public class BlockChain {
 		return sb.toString();
 	}
 
-	public boolean verify(UserCatalog userCatalog) throws NoSuchAlgorithmException, CertificateException, IOException, InvalidKeyException, SignatureException {
+	public synchronized boolean verify(UserCatalog userCatalog) throws NoSuchAlgorithmException, CertificateException, IOException, InvalidKeyException, SignatureException {
 	
 		for (int i = 1; i <= this.nextBlockID - 2; i++) {
 			

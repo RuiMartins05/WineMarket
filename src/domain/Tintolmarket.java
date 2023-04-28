@@ -150,11 +150,8 @@ public class Tintolmarket {
 						trustStore.load(new FileInputStream("./src/keys/" + trustStoreAlias),
 								trustStoreAlias.toCharArray());
 
-						String path = "src/certificates/" + "client" + userActionSplited[1] + "KeyRSApub.cer";
-						FileInputStream is = new FileInputStream(path);
-						CertificateFactory cf = CertificateFactory.getInstance("X.509");
-						Certificate c = cf.generateCertificate(is);
-						is.close();
+
+						Certificate c = trustStore.getCertificate("client" + userActionSplited[1] + "Keys");
 
 						PublicKey pk = c.getPublicKey();
 						Cipher cipher = Cipher.getInstance("RSA");
