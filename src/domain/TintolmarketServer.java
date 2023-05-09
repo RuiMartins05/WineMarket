@@ -22,7 +22,6 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 import javax.net.ServerSocketFactory;
@@ -36,7 +35,6 @@ import catalogs.WineCatalog;
 import domain.entities.AuthenticationValidator;
 import domain.entities.BlockChain;
 import domain.entities.FileEncryptorDecryptor;
-import domain.entities.IntegrationChecker;
 import domain.entities.Mensagem;
 import domain.entities.Sell;
 import domain.entities.Transaction;
@@ -100,37 +98,37 @@ public class TintolmarketServer {
 			FileEncryptorDecryptor.encryptUsersCat(USERSCATFILE, passwordCifra);
 		}
 
+//		// ------------------------------------
+//		// INTEGRIDADE
+//
+//        IntegrationChecker integrityChecker = new IntegrationChecker("key");
+//
+//        integrityChecker.calculateHmac(WINECATFILE);
+//        integrityChecker.calculateHmac(SELLSCATFILE);
+//        integrityChecker.calculateHmac(MSGCATFILE);
+//        integrityChecker.calculateHmac(WALLETFILE);
+//
+//        File file = new File("./src/previousHmacs.txt");
+//        List<String> fileList = new ArrayList<>();
+//
+//        fileList.add(WINECATFILE);
+//        fileList.add(SELLSCATFILE);
+//        fileList.add(MSGCATFILE);
+//        fileList.add(WALLETFILE);
+//
+//        if (!(file.length() > 0)) {
+//            integrityChecker.writeHmacs();
+//        } else {
+//            if (integrityChecker.verifyHmacs(fileList)) {
+//                System.out.println("Os ficheiros estao integros.");
+//                integrityChecker.writeHmacs();
+//            } else {
+//                System.out.println("Algum ficheiro esta corrompido.");
+//                System.exit(0);
+//            }
+//        }
+
 		// ------------------------------------
-		// INTEGRIDADE
-
-        IntegrationChecker integrityChecker = new IntegrationChecker("key");
-
-        integrityChecker.calculateHmac(WINECATFILE);
-        integrityChecker.calculateHmac(SELLSCATFILE);
-        integrityChecker.calculateHmac(MSGCATFILE);
-        integrityChecker.calculateHmac(WALLETFILE);
-
-        File file = new File("./src/previousHmacs.txt");
-        List<String> fileList = new ArrayList<>();
-
-        fileList.add(WINECATFILE);
-        fileList.add(SELLSCATFILE);
-        fileList.add(MSGCATFILE);
-        fileList.add(WALLETFILE);
-
-        if (!(file.length() > 0)) {
-            integrityChecker.writeHmacs();
-        } else {
-            if (integrityChecker.verifyHmacs(fileList)) {
-                System.out.println("Os ficheiros estao integros.");
-                integrityChecker.writeHmacs();
-            } else {
-                System.out.println("Algum ficheiro esta corrompido.");
-                System.exit(0);
-            }
-        }
-        
-        // ------------------------------------
 
 		System.setProperty("javax.net.ssl.keyStore", "src//keys//" + serverKeyAlias);
 		System.setProperty("javax.net.ssl.keyStorePassword", passwordServerKeyStore);
@@ -142,7 +140,8 @@ public class TintolmarketServer {
 	}
 
 	@SuppressWarnings("resource")
-	public void startServer(SSLServerSocket sslServerSocket) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
+	public void startServer(SSLServerSocket sslServerSocket)
+			throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
 		initializeMemory();
 
@@ -169,11 +168,12 @@ public class TintolmarketServer {
 			if (!blockchain.verify(userCatalog)) {
 				System.out.println("Blockchain corrompida");
 				System.exit(0);
-			}else {
+			} else {
 				System.out.println("Blockchain Verificada");
 			}
 
-		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException | SignatureException e) {
+		} catch (NoSuchAlgorithmException | CertificateException | IOException | InvalidKeyException
+				| SignatureException e) {
 			System.out.println("Blockchain corrompida");
 			System.exit(0);
 		}
@@ -278,7 +278,7 @@ public class TintolmarketServer {
 				}
 
 				String certificadoStr = "client" + clientID + "KeyRSApub.cer";
-				
+
 				userCatalog.initializeUserCatalog();
 				clientExistsFlag = userCatalog.exists(clientID);
 				userCatalog.resetCatalog();
@@ -316,7 +316,7 @@ public class TintolmarketServer {
 					}
 
 					if (!clientExistsFlag) {
-						
+
 						userCatalog.initializeUserCatalog();
 						userCatalog.registNewUser(clientID, certificadoStr);
 						userCatalog.registNewWallet(clientID);
@@ -388,8 +388,7 @@ public class TintolmarketServer {
 
 					} else if ((userActionSplited[0].equals("talk") || userActionSplited[0].equals("t"))) {
 
-						outStream.writeObject(
-								talkFunc(USERSCATFILE, MSGCATFILE, clientID, userActionSplited[1]));
+						outStream.writeObject(talkFunc(USERSCATFILE, MSGCATFILE, clientID, userActionSplited[1]));
 
 					} else if (userActionSplited[0].equals("read") || userActionSplited[0].equals("r")) {
 						outStream.writeObject(readFunc(MSGCATFILE, clientID));
@@ -535,7 +534,7 @@ public class TintolmarketServer {
 					for (Sell sell : wineSales) {
 						if (sell.getQuantity() > 0) {
 							result.append(" Seller: " + sell.getSeller() + "; Value: " + sell.getValue()
-							+ "; Quantity: " + sell.getQuantity() + "\n");
+									+ "; Quantity: " + sell.getQuantity() + "\n");
 						}
 					}
 				}
@@ -726,11 +725,10 @@ public class TintolmarketServer {
 			userCatalog.initializeUserCatalog();
 			if (userCatalog.exists(clientIDDest)) {
 				userCatalog.resetCatalog();
-				ObjectOutputStream  addMessage = new ObjectOutputStream(new FileOutputStream(messagesFilename, true));
+				ObjectOutputStream addMessage = new ObjectOutputStream(new FileOutputStream(messagesFilename, true));
 
 				Mensagem currentMsg = new Mensagem(clientIDSender, clientIDDest, dataEncrypted);
 				messageCatalog.add(currentMsg);
-
 
 				synchronized (addMessage) {
 					addMessage.writeObject(currentMsg);
@@ -741,10 +739,9 @@ public class TintolmarketServer {
 			} else {
 				userCatalog.resetCatalog();
 			}
-			
+
 			return "Unsent message, user not found.";
 		}
-
 
 		private synchronized ArrayList<Mensagem> readFunc(String filename, String clientID) {
 			ArrayList<Mensagem> messagesForClient = new ArrayList<>();
@@ -778,11 +775,9 @@ public class TintolmarketServer {
 			return messagesForClient;
 		}
 
-
 	}
 
-	private void exitFunc(ObjectInputStream inStream, ObjectOutputStream outStream, Socket sock)
-			throws IOException {
+	private void exitFunc(ObjectInputStream inStream, ObjectOutputStream outStream, Socket sock) throws IOException {
 		inStream.close();
 		outStream.close();
 		sock.close();
@@ -841,33 +836,32 @@ public class TintolmarketServer {
 						String newContentBuy = oldContent.replace(wineFileLine, newStringBuy);
 						newContentWithoutNewLine = newContentBuy.substring(0, newContentBuy.length() - 2);
 						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
-						.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) - quantity);
+								.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) - quantity);
 						break;
 
 					case "sell":
 
-						String newStringSell = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";"
-								+ value + ";" + String.valueOf(Integer.parseInt(wineFileLineSplitted[3]) + quantity)
-								+ ";" + wineFileLineSplitted[4]);
+						String newStringSell = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";" + value
+								+ ";" + String.valueOf(Integer.parseInt(wineFileLineSplitted[3]) + quantity) + ";"
+								+ wineFileLineSplitted[4]);
 
 						String newContentSell = oldContent.replace(wineFileLine, newStringSell);
 						newContentWithoutNewLine = newContentSell.substring(0, newContentSell.length() - 2);
 						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
-						.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) + quantity);
+								.setQuantity(Integer.parseInt(wineFileLineSplitted[3]) + quantity);
 						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setValue(value);
 						break;
 
 					case "sellDifPrice":
 
-						String newStringSellDifPrice = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1]
-								+ ";" + value + ";" + quantity + ";" + wineFileLineSplitted[4]);
+						String newStringSellDifPrice = (wineFileLineSplitted[0] + ";" + wineFileLineSplitted[1] + ";"
+								+ value + ";" + quantity + ";" + wineFileLineSplitted[4]);
 
 						String newContentSellDifPrice = oldContent.replace(wineFileLine, newStringSellDifPrice);
 						newContentWithoutNewLine = newContentSellDifPrice.substring(0,
 								newContentSellDifPrice.length() - 2);
 
-						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4])
-						.setQuantity(quantity);
+						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setQuantity(quantity);
 						sellsCatalog.getSale(wineFileLineSplitted[0], wineFileLineSplitted[4]).setValue(value);
 						break;
 
