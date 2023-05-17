@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -16,10 +15,8 @@ import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.util.Base64;
-import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -150,7 +147,6 @@ public class Tintolmarket {
 						trustStore.load(new FileInputStream("./src/keys/" + trustStoreAlias),
 								trustStoreAlias.toCharArray());
 
-
 						Certificate c = trustStore.getCertificate("client" + userActionSplited[1] + "Keys");
 
 						PublicKey pk = c.getPublicKey();
@@ -182,7 +178,8 @@ public class Tintolmarket {
 						// verificar se é a mensagem de confirmação ou erro no buy
 						String serverResponse = (String) inStream.readObject();
 
-						if (serverResponse.equals("Reasons why you can't buy this wine:") || serverResponse.equals("This wine doesnt exist")) {
+						if (serverResponse.equals("Reasons why you can't buy this wine:")
+								|| serverResponse.equals("This wine doesnt exist")) {
 							System.out.println(serverResponse);
 							continue;
 						} else {
@@ -197,20 +194,24 @@ public class Tintolmarket {
 
 					String result = null;
 					if (userActionSplited[0].equals("read") || userActionSplited[0].equals("r")) {
-						
+
 						ArrayList<Mensagem> resultMensagens = (ArrayList<Mensagem>) inStream.readObject();
-						
+
 						Cipher cipher = Cipher.getInstance("RSA");
 						cipher.init(Cipher.DECRYPT_MODE, clientAuth.getPrivateKey());
 						StringBuilder sb = new StringBuilder();
-						sb.append("Mensagens recebidas: \n");
-						
-						for (Mensagem m: resultMensagens) {
+
+						if (resultMensagens.size() == 0)
+							sb.append("Don't have any messages to read.\n");
+						else
+							sb.append("Received messages: \n");
+
+						for (Mensagem m : resultMensagens) {
 							byte[] msgEncrypted = m.getMessage();
 							String msgDecrypted = decryptMessage(msgEncrypted, cipher);
 							sb.append(" Remetente: " + m.getSender() + ";\n Mensagem: " + msgDecrypted + " \n\n");
-						}	
-					
+						}
+
 						System.out.println(sb.toString());
 
 					} else {
@@ -253,8 +254,9 @@ public class Tintolmarket {
 			System.out.println("I/O error: " + ex.getMessage());
 		}
 	}
-	
-	private static String decryptMessage(byte[] msgEncrypted, Cipher cipher) throws IllegalBlockSizeException, BadPaddingException {
+
+	private static String decryptMessage(byte[] msgEncrypted, Cipher cipher)
+			throws IllegalBlockSizeException, BadPaddingException {
 		byte[] decryptedData = cipher.doFinal(msgEncrypted);
 		return new String(decryptedData);
 	}

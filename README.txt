@@ -24,25 +24,26 @@ and then run TintolMarket after run TintolMarketServer.
 
 - Server: 
 
-  TintolmarketServerJar <port>
+	• <port> identifies the port (TCP) to accept connections from clients. By default or server
+		must use port 12345;
+	• <password-cifra> is a password to be used to generate the symmetric key that encrypts the
+		application files;
+	• <keystore> which contains the server's key pair;
+	• <password-keystore> is the keystore password.
 
-	• <port> identifies the port (TCP) to accept connections from clients. By default the server
-	    	 must use port 12345.
-
-	run Server: java -jar server.jar <port> 
+	run Server: java -jar server.jar <port> <password-cifra> <keystore> <password-keystore>
 
 - Client:
 
-  TintolmarketJar <serverAddress> <userID> [password]
-
 	• <serverAddress> identifies the server. The format of serverAddress is as follows:
-  			  <IP/hostname>[:Port]. IP address or server hostname is mandatory and the port
-  			  it is optional. By default, the client should connect to server port 12345.
-	• <clientID> identifies the local user.
-	• [password] – password used to authenticate the local user. If the password does not
-	       	       given on the command line, it must be prompted by the application (Optional).
+		<IP/hostname>[:Port]. The IP address or hostname of the server is mandatory and the port
+		it is optional. By default, the client should connect to server port 12345;
+	• <truststore> which contains the server's and other clients' public key certificates;
+	• <keystore> which contains the userID key pair;
+	• <password-keystore> is the keystore password;
+	• <userID> identifies the local user.
 
-	run Client: java -jar client.jar <serverAddress> <clientID> [password]
+	run Client: java -jar client.jar <serverAddress> <truststore> <keystore> <password-keystore> <userID>
 
 
 # LIMITATIONS
@@ -71,4 +72,4 @@ Group SD-050
  Paulo Bolinhas nº 56300
  Rui Martins nº 56283
 
--------------------------------------------------------------------------------------------------# WineMarket
+-------------------------------------------------------------------------------------------------
